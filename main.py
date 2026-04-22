@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-class PathExistenceError(Exception):
+class PathExistsError(Exception):
     pass
 
 def get_path_from_user():
@@ -17,6 +17,17 @@ def get_path_from_user():
 def get_file_category(extension, file_mapping):
     return file_mapping.get(extension, 'unknown_file_type')
 
+def get_unique_path(base_path):
+    if not base_path.exists():
+        return base_path
+    else:
+        copy_num = 1
+        while True: 
+            new_path = base_path.with_name(f'{base_path.stem}_{copy_num}{base_path.suffix}')
+            if not new_path.exists():
+                return new_path
+            copy_num += 1
+
 def organize_folder(target_path, file_mapping):
     for file in target_path.iterdir():
         if file.is_file():
@@ -24,7 +35,8 @@ def organize_folder(target_path, file_mapping):
                 file_cat = get_file_category(file.suffix, file_mapping)
                 Path(target_path / file_cat).mkdir(exist_ok=True)
                 dest_path = target_path / file_cat / file.name
-                file.rename(dest_path)
+                new_dest_path = get_unique_path(dest_path)
+                file.rename(new_dest_path)
             except PermissionError:
                 print(f'No permission for: \'{dest_path}\' will be ignored.')
 
@@ -41,7 +53,7 @@ def main():
     try: 
         target_path = get_path_from_user()
         organize_folder(target_path, file_mapping)
-    except PathExistenceError as e:
+    except PathExistsError as e:
         print(f'!! {e} !!')
     except NotADirectoryError as e:
         print(f'!! {e} !!')
