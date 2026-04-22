@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import logging
 
 class PathExistsError(Exception):
     pass
@@ -8,10 +9,9 @@ def get_path_from_user():
     home = Path.home()
     path = Path(input(f'Fill in directory path you want to organize (e.g {home}/a/directory): '))
     if not path.exists():
-        raise PathExistenceError(f'The path \'{path}\' does not exist in your file system')
+        raise PathExistsError(f'The path \'{path}\' does not exist in your file system')
     elif not path.is_dir():
         raise NotADirectoryError(f'Not a directory: \'{path}\'')
-    
     return path
 
 def get_file_category(extension, file_mapping):
@@ -37,26 +37,42 @@ def organize_folder(target_path, file_mapping):
                 dest_path = target_path / file_cat / file.name
                 new_dest_path = get_unique_path(dest_path)
                 file.rename(new_dest_path)
+                logging.info(f'File successfully moved: {file.name} -> {new_dest_path}')
             except PermissionError:
-                print(f'No permission for: \'{dest_path}\' will be ignored.')
+                logging.warning(f'No permission for: \'{dest_path}\' will be ignored.')
 
 def main():
+    LOG_FILE = Path(__file__).parent / "file_organizer.log"
+    c_handler = logging.StreamHandler()
+    c_handler.setLevel(logging.WARNING)
+
+    f_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
+    f_handler.setLevel(logging.INFO)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    c_handler.setFormatter(formatter)
+    f_handler.setFormatter(formatter)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[c_handler, f_handler]
+    )
+
     file_mapping = {
         '.jpg': 'pictures',
         '.png': 'pictures',
         '.pdf': 'documents',
         '.docx': 'documents',
     }
-    downloads = Path.home() / 'Downloads'
-    print(downloads)
 
     try: 
         target_path = get_path_from_user()
         organize_folder(target_path, file_mapping)
     except PathExistsError as e:
-        print(f'!! {e} !!')
+        logging.critical(f'!! {e} !!')
     except NotADirectoryError as e:
-        print(f'!! {e} !!')
+        logging.critical(f'!! {e} !!')
     
 
 if __name__ == '__main__':
