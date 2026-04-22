@@ -4,8 +4,9 @@ from pathlib import Path
 class PathExistenceError(Exception):
     pass
 
-def get_path_from_user(): 
-    path = Path(input('Fill in directory path you want to organize: '))
+def get_path_from_user():
+    home = Path.home()
+    path = Path(input(f'Fill in directory path you want to organize (e.g {home}/a/directory): '))
     if not path.exists():
         raise PathExistenceError(f'The path \'{path}\' does not exist in your file system')
     elif not path.is_dir():
@@ -19,13 +20,13 @@ def get_file_category(extension, file_mapping):
 def organize_folder(target_path, file_mapping):
     for file in target_path.iterdir():
         if file.is_file():
-            file_cat = get_file_category(file.suffix, file_mapping)
-            Path(target_path / file_cat).mkdir(exist_ok=True)
-            dest_path = target_path / file_cat / file.name
-            if not dest_path.exists():
+            try:
+                file_cat = get_file_category(file.suffix, file_mapping)
+                Path(target_path / file_cat).mkdir(exist_ok=True)
+                dest_path = target_path / file_cat / file.name
                 file.rename(dest_path)
-            else:
-                print(f'File {file.name} already exists in Directory {dest_path}')
+            except PermissionError:
+                print(f'No permission for: \'{dest_path}\' will be ignored.')
 
 def main():
     file_mapping = {
