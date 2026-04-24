@@ -40,30 +40,34 @@ def organize_folder(target_path, file_mapping):
             except PermissionError:
                 logging.warning(f'No permission for: \'{dest_path}\' will be ignored.')
 
-def main():
-    LOG_FILE = Path(__file__).parent / "file_organizer.log"
+def logging_config(path_to_log_file):
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    while logger.handlers:
+        logger.removeHandler(logger.handlers[0])
+    
     c_handler = logging.StreamHandler()
     c_handler.setLevel(logging.WARNING)
-
-    f_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
+    f_handler = logging.FileHandler(path_to_log_file, encoding='utf-8')
     f_handler.setLevel(logging.INFO)
-
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    c_handler.setFormatter(formatter)
-    f_handler.setFormatter(formatter)
+    
+    for handler in [c_handler, f_handler]:
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[c_handler, f_handler]
-    )
+    return logger
 
+def main():
+    LOG_FILE = Path(__file__).parent / "file_organizer.log"
     file_mapping = {
         '.jpg': 'pictures',
         '.png': 'pictures',
         '.pdf': 'documents',
         '.docx': 'documents',
     }
+    logging_config(LOG_FILE)
 
     try: 
         target_path = get_path_from_user()
