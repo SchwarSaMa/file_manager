@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import logging
 
@@ -32,7 +31,7 @@ def organize_folder(target_path, file_mapping):
     for file in target_path.iterdir():
         if file.is_file():
             try:
-                file_cat = get_file_category(file.suffix, file_mapping)
+                file_cat = get_file_category(file.suffix.lower(), file_mapping)
                 Path(target_path / file_cat).mkdir(exist_ok=True)
                 dest_path = target_path / file_cat / file.name
                 new_dest_path = get_unique_path(dest_path)
@@ -74,6 +73,5 @@ def main():
     except NotADirectoryError as e:
         logging.critical(f'!! {e} !!')
     
-
 if __name__ == '__main__':
     main()
