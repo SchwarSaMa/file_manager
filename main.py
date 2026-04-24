@@ -28,11 +28,14 @@ def get_unique_path(base_path):
             copy_num += 1
 
 def organize_folder(target_path, file_mapping):
+    directories = set()
     for file in target_path.iterdir():
         if file.is_file():
             try:
                 file_cat = get_file_category(file.suffix.lower(), file_mapping)
-                Path(target_path / file_cat).mkdir(exist_ok=True)
+                if file_cat not in directories:
+                    Path(target_path / file_cat).mkdir(exist_ok=True)
+                    directories.add(file_cat)
                 dest_path = target_path / file_cat / file.name
                 new_dest_path = get_unique_path(dest_path)
                 file.rename(new_dest_path)
@@ -43,7 +46,7 @@ def organize_folder(target_path, file_mapping):
 def logging_config(path_to_log_file):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    
+
     while logger.handlers:
         logger.removeHandler(logger.handlers[0])
     
