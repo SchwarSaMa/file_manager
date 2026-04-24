@@ -29,10 +29,14 @@ def get_unique_path(base_path):
 
 def organize_folder(target_path, file_mapping):
     directories = set()
+    unknown_file_types = set()
     for file in target_path.iterdir():
         if file.is_file():
             try:
                 file_cat = get_file_category(file.suffix.lower(), file_mapping)
+                if file_cat == 'unknown_file_type':
+                    unknown_file_types.add(file.suffix.lower())
+                    continue
                 if file_cat not in directories:
                     Path(target_path / file_cat).mkdir(exist_ok=True)
                     directories.add(file_cat)
