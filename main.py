@@ -39,6 +39,8 @@ def organize_folder(target_path, file_mapping):
                 if file_cat == 'unknown_file_type':
                     unknown_file_types.add(file.suffix.lower())
                     continue
+                if file_cat == None:
+                    continue
                 if file_cat not in directories:
                     Path(target_path / file_cat).mkdir(exist_ok=True)
                     directories.add(file_cat)
@@ -48,6 +50,8 @@ def organize_folder(target_path, file_mapping):
                 logging.info(f'File successfully moved: {file.name} -> {new_dest_path}')
             except PermissionError:
                 logging.warning(f'No permission for: \'{dest_path}\' will be ignored.')
+            except TypeError:
+                logging.warning(f'{file.suffix.lower()} is not yet defined.')
     return unknown_file_types
 
 def logging_config(path_to_log_file):
