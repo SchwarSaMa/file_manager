@@ -33,7 +33,7 @@ def organize_folder(target_path, file_mapping):
     unknown_file_types = set()
 
     for file in target_path.iterdir():
-        if file.is_file():
+        if file.is_file() and not file.suffix == '':
             try:
                 file_cat = get_file_category(file.suffix.lower(), file_mapping)
                 if file_cat == 'unknown_file_type':
