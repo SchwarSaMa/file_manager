@@ -1,5 +1,6 @@
 from pathlib import Path
 import logging
+import json
 
 class PathExistsError(Exception):
     pass
@@ -30,6 +31,7 @@ def get_unique_path(base_path):
 def organize_folder(target_path, file_mapping):
     directories = set()
     unknown_file_types = set()
+
     for file in target_path.iterdir():
         if file.is_file():
             try:
@@ -46,6 +48,7 @@ def organize_folder(target_path, file_mapping):
                 logging.info(f'File successfully moved: {file.name} -> {new_dest_path}')
             except PermissionError:
                 logging.warning(f'No permission for: \'{dest_path}\' will be ignored.')
+    return unknown_file_types
 
 def logging_config(path_to_log_file):
     logger = logging.getLogger()
@@ -66,19 +69,30 @@ def logging_config(path_to_log_file):
 
     return logger
 
+def import_json(file_path):
+    try:
+        with open(file_path, 'r') as f:
+            known_file_types = json.load(f)
+    except (json.decoder.JSONDecodeError, FileNotFoundError):
+        return {}
+    return known_file_types
+
+def export_json(new_extensions, old_extensions, file_path):
+    old_ext_dict = old_extensions | {extension: None for extension in new_extensions}
+    with open(file_path, 'w') as f:
+        json.dump(old_ext_dict, f, indent=4)
+    logging.info(f'Unknown file extensions saved: {new_extensions}')
+
 def main():
     LOG_FILE = Path(__file__).parent / "file_organizer.log"
-    file_mapping = {
-        '.jpg': 'pictures',
-        '.png': 'pictures',
-        '.pdf': 'documents',
-        '.docx': 'documents',
-    }
-    logging_config(LOG_FILE)
+    JSON_FILE = Path(__file__).parent / "file_extensions.json"
 
+    logging_config(LOG_FILE)
     try: 
+        known_file_types = import_json(JSON_FILE)
         target_path = get_path_from_user()
-        organize_folder(target_path, file_mapping)
+        unknown_file_types = organize_folder(target_path, known_file_types)
+        export_json(unknown_file_types, known_file_types, JSON_FILE)
     except PathExistsError as e:
         logging.critical(f'!! {e} !!')
     except NotADirectoryError as e:
