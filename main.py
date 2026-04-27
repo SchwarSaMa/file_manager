@@ -55,7 +55,6 @@ def organize_folder(target_path, file_mapping, default_category):
                 file_cat = get_file_category(
                     file_suffix, file_mapping, default_category
                 )
-                category_dir = target_path / file_cat
 
                 if file_cat == default_category:
                     unknown_file_types.add(file_suffix)
@@ -64,6 +63,7 @@ def organize_folder(target_path, file_mapping, default_category):
                 if file_cat is None:
                     continue
 
+                category_dir = target_path / file_cat
                 if file_cat not in directories:
                     category_dir.mkdir(exist_ok=True)
                     directories.add(file_cat)
