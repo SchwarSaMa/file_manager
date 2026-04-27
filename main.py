@@ -7,12 +7,17 @@ class PathExistsError(Exception):
     pass
 
 
-def get_path_from_user():
-    home = Path.home()
+def prompt_user_for_path(home_dir):
     path = Path(
-        input(f"Fill in directory path you want to organize (e.g {home}/a/directory): ")
+        input(
+            f"Fill in directory path you want to organize (e.g {home_dir}/a/directory): "
+        )
     )
 
+    return path
+
+
+def validate_path_from_user(path):
     if not path.exists():
         raise PathExistsError(f"The path '{path}' does not exist in your file system")
     elif not path.is_dir():
@@ -112,11 +117,12 @@ def main():
     LOG_FILE = Path(__file__).parent / "file_organizer.log"
     JSON_FILE = Path(__file__).parent / "file_extensions.json"
     UNKNOWN_CATEGORY = "unknown_category"
+    HOME_DIR = Path.home()
 
     logging_config(LOG_FILE)
     try:
+        target_path = validate_path_from_user(prompt_user_for_path(HOME_DIR))
         known_file_types = import_json(JSON_FILE)
-        target_path = get_path_from_user()
         unknown_file_types = organize_folder(
             target_path, known_file_types, UNKNOWN_CATEGORY
         )
