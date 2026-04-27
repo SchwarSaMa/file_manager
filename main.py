@@ -3,10 +3,6 @@ import logging
 import json
 
 
-class PathExistsError(Exception):
-    pass
-
-
 def prompt_user_for_path(home_dir):
     path = Path(
         input(
@@ -15,6 +11,41 @@ def prompt_user_for_path(home_dir):
     )
 
     return path
+
+
+class PathExistsError(Exception):
+    pass
+
+
+class FileOrganizer:
+    def __init__(
+        self,
+        path,
+        log_file=Path(__file__).parent / "file_organizer.log",
+        mapping_file=Path(__file__).parent / "file_types.json",
+    ):
+        self.path = self.validate_path(Path(path))
+        self.mapping_file = mapping_file
+        self.known_file_types = self._load_mapping(mapping_file)
+        self.unknown_file_types = set()
+
+    def validate_path(self, path: Path) -> Path:
+        if not path.exists():
+            raise PathExistsError(
+                f"The path '{path}' does not exist in your file system"
+            )
+        elif not path.is_dir():
+            raise NotADirectoryError(f"Not a directory: '{path}'")
+
+        return path
+
+    def _load_mapping(self, mapping_file: Path) -> dict:
+        try:
+            with open(mapping_file, "r") as f:
+                return json.load(f)
+        except (json.decoder.JSONDecodeError, FileNotFoundError):
+            logging.warning(f"Could not be loaded: {mapping_file}")
+            return {}
 
 
 def validate_path_from_user(path):
