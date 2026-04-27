@@ -49,24 +49,26 @@ def organize_folder(target_path, file_mapping, default_category):
     unknown_file_types = set()
 
     for file in target_path.iterdir():
-        if file.is_file() and not file.suffix == "":
+        file_suffix = file.suffix.lower()
+        if file.is_file() and not file_suffix == "":
             try:
                 file_cat = get_file_category(
-                    file.suffix.lower(), file_mapping, default_category
+                    file_suffix, file_mapping, default_category
                 )
+                category_dir = target_path / file_cat
 
                 if file_cat == default_category:
-                    unknown_file_types.add(file.suffix.lower())
+                    unknown_file_types.add(file_suffix)
                     continue
 
-                if file_cat == None:
+                if file_cat is None:
                     continue
 
                 if file_cat not in directories:
-                    Path(target_path / file_cat).mkdir(exist_ok=True)
+                    category_dir.mkdir(exist_ok=True)
                     directories.add(file_cat)
 
-                dest_path = target_path / file_cat / file.name
+                dest_path = category_dir / file.name
                 new_dest_path = get_unique_path(dest_path)
                 file.rename(new_dest_path)
                 logging.info(f"File successfully moved: {file.name} -> {new_dest_path}")
