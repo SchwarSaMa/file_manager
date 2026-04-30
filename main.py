@@ -18,6 +18,8 @@ class PathExistsError(Exception):
 
 
 class FileOrganizer:
+    DEFAULT_CATEGORY = "Unknown"
+
     def __init__(
         self,
         path,
@@ -48,6 +50,40 @@ class FileOrganizer:
         except (json.decoder.JSONDecodeError, FileNotFoundError):
             logging.warning(f"Could not be loaded: {mapping_file}")
             return {}
+
+    def run(self):
+        file_categories = set()
+
+        for file in self.path.iterdir():
+            file_suffix = file.suffix.lower()
+            if file.is_file() and not file_suffix == "":
+                try:
+                    file_category = get_file_category()
+
+                    if file_category == FileOrganizer.DEFAULT_CATEGORY:
+                        self.unknown_file_types.add(file_suffix)
+                        continue
+
+                    # for cases {'.example': null} in file_extensions.json
+                    if file_category is None:
+                        continue
+
+                    file_category_path = self.path / file_category
+                    if file_category not in file_categories:
+                        file_category_path.mkdir(exist_ok=True)
+                        file_categories.add(file_category)
+
+                    file_path = file_category_path / file.name
+                    unique_file_path = get_unique_path(file_path)
+                    file.rename(unique_file_path)
+                    logging.info(
+                        f"File successfully moved: {file.name} -> {unique_file_path}"
+                    )
+
+                except PermissionError:
+                    logging.warning(
+                        f"No permission for: '{unique_file_path}' will be ignored."
+                    )
 
 
 def validate_path_from_user(path):
@@ -93,6 +129,7 @@ def organize_folder(target_path, file_mapping, default_category):
                     unknown_file_types.add(file_suffix)
                     continue
 
+                # for cases {'.example': null} in file_extensions.json
                 if file_cat is None:
                     continue
 
