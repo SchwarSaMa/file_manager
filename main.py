@@ -29,7 +29,8 @@ class FileOrganizer:
         self.known_file_types = self._load_mapping(mapping_file)
         self.unknown_file_types = set()
 
-    def validate_path(self, path: Path) -> Path:
+    @staticmethod
+    def validate_path(path: Path) -> Path:
         if not path.exists():
             raise PathExistsError(
                 f"The path '{path}' does not exist in your file system"
@@ -39,7 +40,8 @@ class FileOrganizer:
 
         return path
 
-    def _load_mapping(self, mapping_file: Path) -> dict:
+    @staticmethod
+    def load_mapping(mapping_file: Path) -> dict:
         try:
             with open(mapping_file, "r") as f:
                 return json.load(f)
