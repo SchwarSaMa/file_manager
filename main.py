@@ -27,6 +27,7 @@ class FileOrganizer:
         mapping_file=Path(__file__).parent / "file_types.json",
     ):
         self.path = self.validate_path(Path(path))
+        self.mapping_file = mapping_file
         self.known_file_types = self._load_mapping(mapping_file)
         self.unknown_file_types = set()
 
@@ -66,6 +67,14 @@ class FileOrganizer:
 
     def _get_file_category(self, file_suffix):
         return self.known_file_types.get(file_suffix, FileOrganizer.DEFAULT_CATEGORY)
+
+    def save_mapping(self):
+        updated_file_types = self.known_file_types | {
+            file_type: None for file_type in self.unknown_file_types
+        }
+        with open(self.mapping_file, "w") as f:
+            json.dump(updated_file_types, f, indent=4)
+        logging.info(f"Unknown file extensions saved: {self.unknown_file_types}")
 
     def run(self):
         file_categories = set()
