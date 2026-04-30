@@ -26,9 +26,9 @@ class FileOrganizer:
         log_file: Path = Path(__file__).parent / "file_organizer.log",
         mapping_file: Path = Path(__file__).parent / "file_types.json",
     ) -> None:
-        self.path = self.validate_path(Path(path))
+        self.path = FileOrganizer.validate_path(Path(path))
         self.mapping_file = mapping_file
-        self.known_file_types = self.load_mapping(mapping_file)
+        self.known_file_types = FileOrganizer.load_mapping(mapping_file)
         self.unknown_file_types = set()
 
     @staticmethod
@@ -76,7 +76,7 @@ class FileOrganizer:
             json.dump(updated_file_types, f, indent=4)
         logging.info(f"Unknown file extensions saved: {self.unknown_file_types}")
 
-    def run(self) -> None:
+    def organize(self) -> None:
         file_categories = set()
 
         for file in self.path.iterdir():
@@ -210,25 +210,13 @@ def export_json(new_extensions, old_extensions, file_path):
     logging.info(f"Unknown file extensions saved: {new_extensions}")
 
 
-def main():
-    LOG_FILE = Path(__file__).parent / "file_organizer.log"
-    JSON_FILE = Path(__file__).parent / "file_extensions.json"
-    UNKNOWN_CATEGORY = "unknown_category"
-    HOME_DIR = Path.home()
-
-    logging_config(LOG_FILE)
+if __name__ == "__main__":
+    home = Path.home()
     try:
-        target_path = validate_path_from_user(prompt_user_for_path(HOME_DIR))
-        known_file_types = import_json(JSON_FILE)
-        unknown_file_types = organize_folder(
-            target_path, known_file_types, UNKNOWN_CATEGORY
-        )
-        export_json(unknown_file_types, known_file_types, JSON_FILE)
+        downloads = FileOrganizer(home / "Downloads")
+        downloads.run()
+        downloads.save_mapping()
     except PathExistsError as e:
         logging.critical(f"!! {e} !!")
     except NotADirectoryError as e:
         logging.critical(f"!! {e} !!")
-
-
-if __name__ == "__main__":
-    main()
