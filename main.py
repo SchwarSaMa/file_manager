@@ -22,13 +22,13 @@ class FileOrganizer:
 
     def __init__(
         self,
-        path,
-        log_file=Path(__file__).parent / "file_organizer.log",
-        mapping_file=Path(__file__).parent / "file_types.json",
-    ):
+        path: Path,
+        log_file: Path = Path(__file__).parent / "file_organizer.log",
+        mapping_file: Path = Path(__file__).parent / "file_types.json",
+    ) -> None:
         self.path = self.validate_path(Path(path))
         self.mapping_file = mapping_file
-        self.known_file_types = self._load_mapping(mapping_file)
+        self.known_file_types = self.load_mapping(mapping_file)
         self.unknown_file_types = set()
 
     @staticmethod
@@ -43,7 +43,7 @@ class FileOrganizer:
         return path
 
     @staticmethod
-    def load_mapping(mapping_file: Path) -> dict:
+    def load_mapping(mapping_file: Path) -> dict[str, str | None]:
         try:
             with open(mapping_file, "r") as f:
                 return json.load(f)
@@ -52,7 +52,7 @@ class FileOrganizer:
             return {}
 
     @staticmethod
-    def get_unique_path(file_path):
+    def get_unique_path(file_path: Path) -> Path:
         if not file_path.exists():
             return file_path
         else:
@@ -65,10 +65,10 @@ class FileOrganizer:
                     return new_file_path
                 copy_num += 1
 
-    def _get_file_category(self, file_suffix):
+    def _get_file_category(self, file_suffix: str) -> str | None:
         return self.known_file_types.get(file_suffix, FileOrganizer.DEFAULT_CATEGORY)
 
-    def save_mapping(self):
+    def save_mapping(self) -> None:
         updated_file_types = self.known_file_types | {
             file_type: None for file_type in self.unknown_file_types
         }
@@ -76,7 +76,7 @@ class FileOrganizer:
             json.dump(updated_file_types, f, indent=4)
         logging.info(f"Unknown file extensions saved: {self.unknown_file_types}")
 
-    def run(self):
+    def run(self) -> None:
         file_categories = set()
 
         for file in self.path.iterdir():
