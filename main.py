@@ -111,69 +111,6 @@ class FileOrganizer:
                     )
 
 
-def validate_path_from_user(path):
-    if not path.exists():
-        raise PathExistsError(f"The path '{path}' does not exist in your file system")
-    elif not path.is_dir():
-        raise NotADirectoryError(f"Not a directory: '{path}'")
-
-    return path
-
-
-def get_file_category(extension, file_mapping, default_category):
-    return file_mapping.get(extension, default_category)
-
-
-def get_unique_path(base_path):
-    if not base_path.exists():
-        return base_path
-    else:
-        copy_num = 1
-        while True:
-            new_path = base_path.with_name(
-                f"{base_path.stem}_{copy_num}{base_path.suffix}"
-            )
-            if not new_path.exists():
-                return new_path
-            copy_num += 1
-
-
-def organize_folder(target_path, file_mapping, default_category):
-    directories = set()
-    unknown_file_types = set()
-
-    for file in target_path.iterdir():
-        file_suffix = file.suffix.lower()
-        if file.is_file() and not file_suffix == "":
-            try:
-                file_cat = get_file_category(
-                    file_suffix, file_mapping, default_category
-                )
-
-                if file_cat == default_category:
-                    unknown_file_types.add(file_suffix)
-                    continue
-
-                # for cases {'.example': null} in file_extensions.json
-                if file_cat is None:
-                    continue
-
-                category_dir = target_path / file_cat
-                if file_cat not in directories:
-                    category_dir.mkdir(exist_ok=True)
-                    directories.add(file_cat)
-
-                dest_path = category_dir / file.name
-                new_dest_path = get_unique_path(dest_path)
-                file.rename(new_dest_path)
-                logging.info(f"File successfully moved: {file.name} -> {new_dest_path}")
-
-            except PermissionError:
-                logging.warning(f"No permission for: '{dest_path}' will be ignored.")
-
-    return unknown_file_types
-
-
 def logging_config(path_to_log_file):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
@@ -194,27 +131,11 @@ def logging_config(path_to_log_file):
     return logger
 
 
-def import_json(file_path):
-    try:
-        with open(file_path, "r") as f:
-            known_file_types = json.load(f)
-    except (json.decoder.JSONDecodeError, FileNotFoundError):
-        return {}
-    return known_file_types
-
-
-def export_json(new_extensions, old_extensions, file_path):
-    old_ext_dict = old_extensions | {extension: None for extension in new_extensions}
-    with open(file_path, "w") as f:
-        json.dump(old_ext_dict, f, indent=4)
-    logging.info(f"Unknown file extensions saved: {new_extensions}")
-
-
 if __name__ == "__main__":
     home = Path.home()
     try:
         downloads = FileOrganizer(home / "Downloads")
-        downloads.run()
+        downloads.organize()
         downloads.save_mapping()
     except PathExistsError as e:
         logging.critical(f"!! {e} !!")
