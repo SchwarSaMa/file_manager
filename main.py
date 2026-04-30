@@ -27,7 +27,6 @@ class FileOrganizer:
         mapping_file=Path(__file__).parent / "file_types.json",
     ):
         self.path = self.validate_path(Path(path))
-        self.mapping_file = mapping_file
         self.known_file_types = self._load_mapping(mapping_file)
         self.unknown_file_types = set()
 
@@ -51,6 +50,23 @@ class FileOrganizer:
             logging.warning(f"Could not be loaded: {mapping_file}")
             return {}
 
+    @staticmethod
+    def get_unique_path(file_path):
+        if not file_path.exists():
+            return file_path
+        else:
+            copy_num = 1
+            while True:
+                new_file_path = file_path.with_name(
+                    f"{file_path.stem}_{copy_num}{file_path.suffix}"
+                )
+                if not new_file_path.exists():
+                    return new_file_path
+                copy_num += 1
+
+    def _get_file_category(self, file_suffix):
+        return self.known_file_types.get(file_suffix, FileOrganizer.DEFAULT_CATEGORY)
+
     def run(self):
         file_categories = set()
 
@@ -58,13 +74,13 @@ class FileOrganizer:
             file_suffix = file.suffix.lower()
             if file.is_file() and not file_suffix == "":
                 try:
-                    file_category = get_file_category()
+                    file_category = self._get_file_category(file_suffix)
 
                     if file_category == FileOrganizer.DEFAULT_CATEGORY:
                         self.unknown_file_types.add(file_suffix)
                         continue
 
-                    # for cases {'.example': null} in file_extensions.json
+                    # for cases {'.example': null} in file_types.json
                     if file_category is None:
                         continue
 
@@ -74,7 +90,7 @@ class FileOrganizer:
                         file_categories.add(file_category)
 
                     file_path = file_category_path / file.name
-                    unique_file_path = get_unique_path(file_path)
+                    unique_file_path = self.get_unique_path(file_path)
                     file.rename(unique_file_path)
                     logging.info(
                         f"File successfully moved: {file.name} -> {unique_file_path}"
