@@ -99,7 +99,7 @@ class FileOrganizer:
                         file_categories.add(file_category)
 
                     file_path = file_category_path / file.name
-                    unique_file_path = self.get_unique_path(file_path)
+                    unique_file_path = FileOrganizer.get_unique_path(file_path)
                     file.rename(unique_file_path)
                     logging.info(
                         f"File successfully moved: {file.name} -> {unique_file_path}"
