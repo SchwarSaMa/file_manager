@@ -23,13 +23,13 @@ class FileOrganizer:
     def __init__(
         self,
         path: Path,
-        log_file: Path = Path(__file__).parent / "file_organizer.log",
         mapping_file: Path = Path(__file__).parent / "file_types.json",
     ) -> None:
         self.path = FileOrganizer.validate_path(Path(path))
         self.mapping_file = mapping_file
-        self.known_file_types = FileOrganizer.load_mapping(mapping_file)
+        self.known_file_types = self._load_mapping(mapping_file)
         self.unknown_file_types = set()
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     @staticmethod
     def validate_path(path: Path) -> Path:
@@ -42,13 +42,12 @@ class FileOrganizer:
 
         return path
 
-    @staticmethod
-    def load_mapping(mapping_file: Path) -> dict[str, str | None]:
+    def _load_mapping(self, mapping_file: Path) -> dict[str, str | None]:
         try:
             with open(mapping_file, "r") as f:
                 return json.load(f)
         except (json.decoder.JSONDecodeError, FileNotFoundError):
-            logging.warning(f"Could not be loaded: {mapping_file}")
+            self.logger.warning(f"Could not be loaded: {mapping_file}")
             return {}
 
     @staticmethod
@@ -74,7 +73,7 @@ class FileOrganizer:
         }
         with open(self.mapping_file, "w") as f:
             json.dump(updated_file_types, f, indent=4)
-        logging.info(f"Unknown file extensions saved: {self.unknown_file_types}")
+        self.logger.info(f"Unknown file extensions saved: {self.unknown_file_types}")
 
     def organize(self) -> None:
         file_categories = set()
@@ -101,12 +100,12 @@ class FileOrganizer:
                     file_path = file_category_path / file.name
                     unique_file_path = FileOrganizer.get_unique_path(file_path)
                     file.rename(unique_file_path)
-                    logging.info(
+                    self.logger.info(
                         f"File successfully moved: {file.name} -> {unique_file_path}"
                     )
 
                 except PermissionError:
-                    logging.warning(
+                    self.logger.warning(
                         f"No permission for: '{unique_file_path}' will be ignored."
                     )
 
@@ -122,7 +121,9 @@ def logging_config(path_to_log_file):
     c_handler.setLevel(logging.WARNING)
     f_handler = logging.FileHandler(path_to_log_file, encoding="utf-8")
     f_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     for handler in [c_handler, f_handler]:
         handler.setFormatter(formatter)
@@ -132,9 +133,13 @@ def logging_config(path_to_log_file):
 
 
 if __name__ == "__main__":
-    home = Path.home()
+    HOME = Path.home()
+    PATH_TO_LOG_FILE = Path(__file__).parent / "file_organizer.log"
+
+    logging_config(PATH_TO_LOG_FILE)
+
     try:
-        downloads = FileOrganizer(home / "Downloads")
+        downloads = FileOrganizer(HOME / "Downloads")
         downloads.organize()
         downloads.save_mapping()
     except PathExistsError as e:
