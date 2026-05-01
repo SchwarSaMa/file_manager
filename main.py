@@ -28,7 +28,7 @@ class FileOrganizer:
         self.path = FileOrganizer.validate_path(Path(path))
         self.mapping_file = mapping_file
         self.known_file_types = self._load_mapping(mapping_file)
-        self.unknown_file_types = set()
+        self.unknown_file_types: set[str] = set()
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @staticmethod
@@ -113,15 +113,16 @@ class FileOrganizer:
 
 
 def logging_config(path_to_log_file: Path) -> None:
-    logger = logging.getLogger()
+    logger: logging.Logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
     while logger.handlers:
         logger.removeHandler(logger.handlers[0])
 
-    c_handler = logging.StreamHandler()
+    c_handler: logging.Handler = logging.StreamHandler()
+    f_handler: logging.Handler = logging.FileHandler(path_to_log_file, encoding="utf-8")
+
     c_handler.setLevel(logging.WARNING)
-    f_handler = logging.FileHandler(path_to_log_file, encoding="utf-8")
     f_handler.setLevel(logging.INFO)
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -137,10 +138,10 @@ if __name__ == "__main__":
     PATH_TO_LOG_FILE = Path(__file__).parent / "file_organizer.log"
 
     logging_config(PATH_TO_LOG_FILE)
+    user_response = prompt_user_for_path(HOME)
 
     try:
-
-        downloads = FileOrganizer(HOME / "Downloads")
+        downloads = FileOrganizer(user_response)
         downloads.organize()
         downloads.save_mapping()
     except PathExistsError as e:
