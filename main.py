@@ -73,7 +73,9 @@ class FileOrganizer:
         }
         with open(self.mapping_file, "w") as f:
             json.dump(updated_file_types, f, indent=4)
-        self.logger.info(f"Unknown file extensions saved: {self.unknown_file_types}")
+        self.logger.info(
+            f"Unknown file extensions saved: {self.unknown_file_types or 'None'}"
+        )
 
     def organize(self) -> None:
         file_categories = set()
