@@ -1,0 +1,17 @@
+{
+    ".ics": "calendar",
+    ".dmg": "installers",
+    ".pptx": "presentations",
+    ".apkg": "anki_decks",
+    ".fsxml": "data",
+    ".exe": "executable files",
+    ".pages": "documents",
+    ".xlsx": "spreadsheets",
+    ".csv": "data",
+    ".svg": "images",
+    ".mov": "video",
+    ".zip": "archives",
+    ".json": "data",
+    ".m4a": "audio",
+    ".jpeg": "images"
+}
