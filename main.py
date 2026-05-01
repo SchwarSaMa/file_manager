@@ -3,7 +3,7 @@ import logging
 import json
 
 
-def prompt_user_for_path(home_dir):
+def prompt_user_for_path(home_dir: Path) -> Path:
     path = Path(
         input(
             f"Fill in directory path you want to organize (e.g {home_dir}/a/directory): "
@@ -112,7 +112,7 @@ class FileOrganizer:
                     )
 
 
-def logging_config(path_to_log_file):
+def logging_config(path_to_log_file: Path) -> None:
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
@@ -131,8 +131,6 @@ def logging_config(path_to_log_file):
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
-    return logger
-
 
 if __name__ == "__main__":
     HOME = Path.home()
@@ -141,6 +139,7 @@ if __name__ == "__main__":
     logging_config(PATH_TO_LOG_FILE)
 
     try:
+
         downloads = FileOrganizer(HOME / "Downloads")
         downloads.organize()
         downloads.save_mapping()
