@@ -1,14 +1,13 @@
-from pathlib import Path
-import logging
 import json
+import logging
+from pathlib import Path
 
 
 def prompt_user_for_path(home_dir: Path) -> Path:
-    path = Path(
-        input(
-            f"Fill in directory path you want to organize (e.g {home_dir}/a/directory): "
-        )
+    prompt = (
+        f"Fill in directory path you want to organize (e.g {home_dir}/a/directory): "
     )
+    path = Path(input(prompt))
 
     return path
 
@@ -68,9 +67,9 @@ class FileOrganizer:
         return self.known_file_types.get(file_suffix, FileOrganizer.DEFAULT_CATEGORY)
 
     def save_mapping(self) -> None:
-        updated_file_types = self.known_file_types | {
-            file_type: None for file_type in self.unknown_file_types
-        }
+        updated_file_types = self.known_file_types | dict.fromkeys(
+            self.unknown_file_types
+        )
         with open(self.mapping_file, "w") as f:
             json.dump(updated_file_types, f, indent=4)
         self.logger.info(
