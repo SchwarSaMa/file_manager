@@ -18,14 +18,11 @@ class PathExistsError(Exception):
 
 class FileOrganizer:
     DEFAULT_CATEGORY = "Unknown"
+    MAPPING_FILE = Path(__file__).parent / "file_types.json"
 
-    def __init__(
-        self,
-        mapping_file: Path = Path(__file__).parent / "file_types.json",
-    ) -> None:
-        self._path: Path
-        self.mapping_file = mapping_file
-        self.known_file_types = self._load_mapping(mapping_file)
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.known_file_types = self._load_mapping(FileOrganizer.MAPPING_FILE)
         self.unknown_file_types: set[str] = set()
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -34,7 +31,11 @@ class FileOrganizer:
         return self._path
 
     @path.setter
-    def path(self, path):
+    def path(self, path: Path):
+        self._path = self._validate_path(path)
+
+    @staticmethod
+    def _validate_path(path: Path) -> Path:
         if not path.exists():
             raise PathExistsError(
                 f"The path '{path}' does not exist in your file system"
@@ -42,7 +43,7 @@ class FileOrganizer:
         elif not path.is_dir():
             raise NotADirectoryError(f"Not a directory: '{path}'")
 
-        self._path = path
+        return path
 
     def _load_mapping(self, mapping_file: Path) -> dict[str, str | None]:
         try:
@@ -73,7 +74,7 @@ class FileOrganizer:
         updated_file_types = self.known_file_types | dict.fromkeys(
             self.unknown_file_types
         )
-        with open(self.mapping_file, "w") as f:
+        with open(FileOrganizer.MAPPING_FILE, "w") as f:
             json.dump(updated_file_types, f, indent=4)
         self.logger.info(
             f"Unknown file extensions saved: {self.unknown_file_types or 'None'}"
@@ -143,8 +144,7 @@ if __name__ == "__main__":
     user_response = prompt_user_for_path(HOME)
 
     try:
-        downloads = FileOrganizer()
-        downloads.path = user_response
+        downloads = FileOrganizer(user_response)
         downloads.organize()
         downloads.save_mapping()
     except PathExistsError as e:
