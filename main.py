@@ -22,9 +22,9 @@ class FileOrganizer:
 
     def __init__(self, path: Path) -> None:
         self.path = path
-        self.known_file_types = self._load_mapping(FileOrganizer.MAPPING_FILE)
-        self.unknown_file_types: set[str] = set()
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self._known_file_types = self._load_mapping(FileOrganizer.MAPPING_FILE)
+        self._unknown_file_types: set[str] = set()
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     @property
     def path(self) -> Path:
@@ -45,16 +45,8 @@ class FileOrganizer:
 
         return path
 
-    def _load_mapping(self, mapping_file: Path) -> dict[str, str | None]:
-        try:
-            with open(mapping_file, "r") as f:
-                return json.load(f)
-        except (json.decoder.JSONDecodeError, FileNotFoundError):
-            self.logger.warning(f"Could not be loaded: {mapping_file}")
-            return {}
-
     @staticmethod
-    def get_unique_path(file_path: Path) -> Path:
+    def _get_unique_path(file_path: Path) -> Path:
         if not file_path.exists():
             return file_path
         else:
@@ -67,52 +59,61 @@ class FileOrganizer:
                     return new_file_path
                 copy_num += 1
 
-    def _get_file_category(self, file_suffix: str) -> str | None:
-        return self.known_file_types.get(file_suffix, FileOrganizer.DEFAULT_CATEGORY)
+    def _load_mapping(self, mapping_file: Path) -> dict[str, str | None]:
+        try:
+            with open(mapping_file, "r") as f:
+                return json.load(f)
+        except (json.decoder.JSONDecodeError, FileNotFoundError):
+            self._logger.warning(f"Could not be loaded: {mapping_file}")
+            return {}
 
     def save_mapping(self) -> None:
-        updated_file_types = self.known_file_types | dict.fromkeys(
-            self.unknown_file_types
+        updated_file_types = self._known_file_types | dict.fromkeys(
+            self._unknown_file_types
         )
         with open(FileOrganizer.MAPPING_FILE, "w") as f:
             json.dump(updated_file_types, f, indent=4)
-        self.logger.info(
-            f"Unknown file extensions saved: {self.unknown_file_types or 'None'}"
+        self._logger.info(
+            f"Unknown file extensions saved: {self._unknown_file_types or 'None'}"
         )
 
+    def _get_category(self, file: Path) -> str | None:
+        suffix = file.suffix.lower()
+        print(type(file))
+        if file.is_file() and not suffix == "":
+            return self._known_file_types.get(suffix, FileOrganizer.DEFAULT_CATEGORY)
+        else:
+            return None
+
+    def _make_directory(self, category: str) -> Path:
+        directory = self.path / category
+        directory.mkdir(exist_ok=True)
+        return directory
+
     def organize(self) -> None:
-        file_categories = set()
-
         for file in self.path.iterdir():
-            file_suffix = file.suffix.lower()
-            if file.is_file() and not file_suffix == "":
-                try:
-                    file_category = self._get_file_category(file_suffix)
+            category = self._get_category(file)
 
-                    if file_category == FileOrganizer.DEFAULT_CATEGORY:
-                        self.unknown_file_types.add(file_suffix)
-                        continue
+            if category is None:
+                continue
 
-                    # for cases {'.example': null} in file_types.json
-                    if file_category is None:
-                        continue
+            if category == FileOrganizer.DEFAULT_CATEGORY:
+                self._unknown_file_types.add(file.suffix.lower())
+                continue
 
-                    file_category_path = self.path / file_category
-                    if file_category not in file_categories:
-                        file_category_path.mkdir(exist_ok=True)
-                        file_categories.add(file_category)
+            directory = self._make_directory(category)
+            unique_path = self._get_unique_path(directory / file.name)
 
-                    file_path = file_category_path / file.name
-                    unique_file_path = FileOrganizer.get_unique_path(file_path)
-                    file.rename(unique_file_path)
-                    self.logger.info(
-                        f"File successfully moved: {file.name} -> {unique_file_path}"
-                    )
-
-                except PermissionError:
-                    self.logger.warning(
-                        f"No permission for: '{unique_file_path}' will be ignored."
-                    )
+            try:
+                file.rename(unique_path)
+            except PermissionError:
+                self._logger.warning(
+                    f"No permission for: '{unique_path}' will be ignored."
+                )
+            else:
+                self._logger.info(
+                    f"File successfully moved: {file.name} -> {unique_path}"
+                )
 
 
 def logging_config(path_to_log_file: Path) -> None:
