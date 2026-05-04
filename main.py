@@ -21,17 +21,20 @@ class FileOrganizer:
 
     def __init__(
         self,
-        path: Path,
         mapping_file: Path = Path(__file__).parent / "file_types.json",
     ) -> None:
-        self.path = FileOrganizer.validate_path(Path(path))
+        self._path: Path
         self.mapping_file = mapping_file
         self.known_file_types = self._load_mapping(mapping_file)
         self.unknown_file_types: set[str] = set()
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    @staticmethod
-    def validate_path(path: Path) -> Path:
+    @property
+    def path(self) -> Path:
+        return self._path
+
+    @path.setter
+    def path(self, path):
         if not path.exists():
             raise PathExistsError(
                 f"The path '{path}' does not exist in your file system"
@@ -39,7 +42,7 @@ class FileOrganizer:
         elif not path.is_dir():
             raise NotADirectoryError(f"Not a directory: '{path}'")
 
-        return path
+        self._path = path
 
     def _load_mapping(self, mapping_file: Path) -> dict[str, str | None]:
         try:
@@ -140,7 +143,8 @@ if __name__ == "__main__":
     user_response = prompt_user_for_path(HOME)
 
     try:
-        downloads = FileOrganizer(user_response)
+        downloads = FileOrganizer()
+        downloads.path = user_response
         downloads.organize()
         downloads.save_mapping()
     except PathExistsError as e:
