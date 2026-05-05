@@ -79,7 +79,6 @@ class FileOrganizer:
 
     def _get_category(self, file: Path) -> str | None:
         suffix = file.suffix.lower()
-        print(type(file))
         if file.is_file() and not suffix == "":
             return self._known_file_types.get(suffix, FileOrganizer.DEFAULT_CATEGORY)
         else:
