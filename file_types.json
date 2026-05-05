@@ -13,5 +13,9 @@
     ".zip": "archives",
     ".json": "data",
     ".m4a": "audio",
-    ".jpeg": "images"
+    ".jpeg": "images",
+    ".png": "images",
+    ".odt": "documents",
+    ".pdf": "documents",
+    ".docx": "documents"
 }
